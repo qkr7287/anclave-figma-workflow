@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>anclave 개발기 · Figma → GPT → Claude(MCP) 디자인-투-코드 워크플로우</title>
+<style>
+  :root{
+    --bg:#f6f8fb;
+    --bg-2:#ffffff;
+    --surface:#ffffff;
+    --surface-2:#f1f4f8;
+    --border:#e2e7ee;
+    --border-soft:#eef1f5;
+    --text:#1a2433;
+    --muted:#5d6b7e;
+    --muted-2:#98a3b4;
+    --accent:#2563eb;
+    --accent-soft:rgba(37,99,235,.10);
+    --purple:#7c3aed;
+    --purple-soft:rgba(124,58,237,.10);
+    --green:#059669;
+    --green-soft:rgba(5,150,105,.12);
+    --amber:#d97706;
+    --radius:16px;
+    --radius-sm:10px;
+    --maxw:1100px;
+    --shadow:0 18px 44px -24px rgba(20,38,70,.28);
+    --shadow-soft:0 8px 24px -16px rgba(20,38,70,.22);
+    --mono:"SFMono-Regular",ui-monospace,"Cascadia Code","Consolas","D2Coding",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1200px 600px at 82% -12%, rgba(37,99,235,.08), transparent 60%),
+      radial-gradient(1000px 500px at -5% 0%, rgba(124,58,237,.07), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    letter-spacing:-.01em;
+  }
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  a{color:var(--accent);text-decoration:none}
+
+  /* ---------- top nav ---------- */
+  header.topbar{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:saturate(140%) blur(12px);
+    background:rgba(255,255,255,.78);
+    border-bottom:1px solid var(--border-soft);
+  }
+  .topbar .wrap{display:flex;align-items:center;gap:20px;height:60px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.18em;font-size:14px;color:var(--text)}
+  .brand .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--purple));box-shadow:0 4px 14px rgba(37,99,235,.4)}
+  .topnav{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+  .topnav a{color:var(--muted);font-size:13px;padding:7px 12px;border-radius:8px;transition:.15s}
+  .topnav a:hover{color:var(--text);background:var(--surface-2)}
+
+  /* ---------- hero ---------- */
+  .hero{padding:80px 0 56px;text-align:center}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:12.5px;letter-spacing:.04em;color:var(--accent);
+    background:var(--accent-soft);border:1px solid rgba(37,99,235,.22);
+    padding:6px 14px;border-radius:999px;margin-bottom:22px;font-weight:600;
+  }
+  .hero h1{font-size:clamp(30px,5vw,50px);line-height:1.12;font-weight:800;letter-spacing:-.03em}
+  .hero h1 .grad{background:linear-gradient(110deg,#2563eb,#7c3aed 70%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.lead{max-width:660px;margin:22px auto 0;color:var(--muted);font-size:17px}
+  .hero .meta{margin-top:30px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .chip{font-size:12.5px;color:var(--muted);border:1px solid var(--border);background:var(--surface);padding:7px 13px;border-radius:999px;box-shadow:var(--shadow-soft)}
+  .chip b{color:var(--text);font-weight:600}
+
+  /* ---------- pipeline overview ---------- */
+  .pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:48px}
+  .pl-step{
+    position:relative;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:20px 18px;text-align:left;overflow:hidden;box-shadow:var(--shadow-soft);
+  }
+  .pl-step::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--purple))}
+  .pl-step .num{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:700}
+  .pl-step h4{font-size:15px;margin:8px 0 6px;font-weight:700}
+  .pl-step p{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .pl-step .tool{margin-top:12px;font-size:11px;font-family:var(--mono);color:var(--muted-2)}
+
+  /* ---------- sections ---------- */
+  section.block{padding:64px 0;border-top:1px solid var(--border-soft)}
+  .sec-head{margin-bottom:34px}
+  .sec-kicker{font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:.05em;text-transform:uppercase;font-weight:700}
+  .sec-head h2{font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.02em;margin-top:8px}
+  .sec-head p{color:var(--muted);margin-top:12px;max-width:720px;font-size:15.5px}
+
+  /* step layout */
+  .step{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px;align-items:start}
+  .step.reverse{direction:rtl}
+  .step.reverse > *{direction:ltr}
+  .step-copy .badge{
+    display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;
+    color:var(--text);background:var(--surface-2);border:1px solid var(--border);
+    padding:5px 12px;border-radius:999px;font-weight:600;
+  }
+  .step-copy .badge .n{color:var(--accent)}
+  .step-copy h3{font-size:23px;font-weight:800;margin:16px 0 10px;letter-spacing:-.02em}
+  .step-copy > p{color:var(--muted);font-size:15px}
+  .step-copy ul{list-style:none;margin-top:18px;display:grid;gap:10px}
+  .step-copy li{position:relative;padding-left:26px;font-size:14px;color:#3a4658}
+  .step-copy li::before{content:"";position:absolute;left:0;top:8px;width:14px;height:14px;border-radius:5px;background:var(--accent-soft);border:1px solid rgba(37,99,235,.35)}
+  .step-copy li b{color:var(--text);font-weight:600}
+  .opt{font-size:11px;color:var(--amber);border:1px solid rgba(217,119,6,.4);background:rgba(217,119,6,.08);padding:2px 8px;border-radius:6px;margin-left:8px;font-weight:600}
+
+  /* visual frame (browser/figma chrome) */
+  .frame{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+  .frame .bar{display:flex;align-items:center;gap:7px;padding:11px 14px;background:var(--surface-2);border-bottom:1px solid var(--border-soft)}
+  .frame .bar .dots{display:flex;gap:6px}
+  .frame .bar .dots i{width:11px;height:11px;border-radius:50%;display:block}
+  .frame .bar .dots i:nth-child(1){background:#ff5f56}
+  .frame .bar .dots i:nth-child(2){background:#ffbd2e}
+  .frame .bar .dots i:nth-child(3){background:#27c93f}
+  .frame .bar .title{font-size:11.5px;color:var(--muted);font-family:var(--mono);margin-left:6px}
+  .frame .bar .right{margin-left:auto;font-size:10.5px;color:var(--muted-2);font-family:var(--mono)}
+  .frame .body{padding:0}
+  .frame img{display:block;width:100%;height:auto}
+  .cap{font-size:12px;color:var(--muted-2);margin-top:10px;text-align:center;font-family:var(--mono)}
+  .cap .live{color:var(--green);font-weight:700}
+
+  /* ---------- wireframe mock (step1) ---------- */
+  .wf{padding:18px;background:#fafbfd;display:grid;grid-template-columns:120px 1fr 150px;gap:14px;min-height:300px}
+  .wf .col{display:grid;gap:10px;align-content:start}
+  .wf .skl{background:repeating-linear-gradient(45deg,#e7ebf1,#e7ebf1 6px,#f1f4f8 6px,#f1f4f8 12px);border:1px dashed #c2cad6;border-radius:8px}
+  .wf .skl.h{height:34px}.wf .skl.m{height:20px}.wf .skl.s{height:14px}.wf .skl.box{height:64px}
+  .wf .label{font-family:var(--mono);font-size:9.5px;color:#9aa6b6;letter-spacing:.05em}
+  .wf .row{display:grid;grid-template-columns:40px 1fr 56px;gap:8px;align-items:center}
+
+  /* ---------- GPT chat mock (step2) ---------- */
+  .gpt{background:#ffffff;min-height:320px;display:flex;flex-direction:column}
+  .gpt .msg{padding:16px 18px;border-bottom:1px solid var(--border-soft);display:flex;gap:12px;font-size:13px}
+  .gpt .msg:nth-child(2){background:#f7f8fa}
+  .gpt .av{width:28px;height:28px;border-radius:7px;flex:0 0 28px;display:grid;place-items:center;font-size:12px;font-weight:700}
+  .gpt .av.u{background:var(--accent-soft);color:var(--accent)}
+  .gpt .av.a{background:linear-gradient(135deg,#10a37f,#0d8a6c);color:#fff}
+  .gpt .msg .c{color:#36404f}
+  .gpt .msg .c .att{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;font-family:var(--mono);color:var(--muted);background:var(--surface-2);border:1px solid var(--border);padding:4px 9px;border-radius:7px}
+  .gpt .gen{padding:18px;background:#f1f4f8;flex:1;display:flex;align-items:center;justify-content:center}
+  .gpt .gen .out{width:100%;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff;box-shadow:var(--shadow-soft)}
+  .gpt .gen .out .topline{height:30px;background:linear-gradient(90deg,#eef1f6,#e4e9f1);display:flex;align-items:center;padding:0 12px;gap:6px}
+  .gpt .gen .out .topline span{width:6px;height:6px;border-radius:50%;background:#c2cad6}
+  .gpt .gen .out .grid{display:grid;grid-template-columns:90px 1fr 110px;gap:8px;padding:12px}
+  .gpt .gen .out .ph{border-radius:6px;background:linear-gradient(120deg,#e9edf3,#dce3ec)}
+  .gpt .gen .out .ph.tall{height:130px}.gpt .gen .out .ph.l{height:14px;margin-bottom:7px}
+  .gpt .prompt-bar{border-top:1px solid var(--border-soft);padding:12px 16px;display:flex;gap:10px;align-items:center;background:#fff}
+  .gpt .prompt-bar .inp{flex:1;font-size:12px;color:var(--muted-2);font-family:var(--mono)}
+  .gpt .prompt-bar .send{width:28px;height:28px;border-radius:8px;background:var(--accent);display:grid;place-items:center;color:#fff;font-size:13px}
+
+  /* ---------- figma editor mock (step3) — Figma light UI ---------- */
+  .fig{background:#fafafa;min-height:340px;display:grid;grid-template-columns:200px 1fr 220px}
+  .fig .panel{padding:12px;overflow:hidden}
+  .fig .panel.l{border-right:1px solid #e5e5e5;background:#fff}
+  .fig .panel.r{border-left:1px solid #e5e5e5;background:#fff}
+  .fig .ptitle{font-size:10px;color:#8a8a8a;text-transform:uppercase;letter-spacing:.08em;margin:6px 0 10px;font-weight:700}
+  .fig .layer{display:flex;align-items:center;gap:7px;padding:4px 6px;border-radius:5px;font-size:11.5px;color:#333}
+  .fig .layer.sel{background:#0d99ff;color:#fff}
+  .fig .layer .ic{font-size:10px;opacity:.7;width:12px;text-align:center}
+  .fig .layer.child{padding-left:20px;color:#555}
+  .fig .layer.child2{padding-left:34px;color:#777}
+  .fig .canvas{background:
+      radial-gradient(circle at 1px 1px,#d8d8d8 1px,transparent 0);
+      background-size:18px 18px;background-color:#f0f0f0;display:grid;place-items:center;padding:18px}
+  .fig .artboard{width:100%;max-width:340px;background:#0e1320;border-radius:8px;border:1px solid #0d99ff;box-shadow:0 0 0 3px rgba(13,153,255,.2);overflow:hidden}
+  .fig .artboard .ab-label{position:relative;font-size:9px;color:#0d99ff;font-family:var(--mono);padding:3px 6px}
+  .fig .artboard .mini{display:grid;grid-template-columns:54px 1fr 60px;gap:6px;padding:8px}
+  .fig .artboard .mb{border-radius:4px;background:#1b2436}
+  .fig .artboard .mb.tall{height:120px}
+  .fig .prop{margin-bottom:14px}
+  .fig .prop .k{font-size:10px;color:#8a8a8a;margin-bottom:5px}
+  .fig .prop .fields{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .fig .prop .f{background:#f5f5f5;border:1px solid #e2e2e2;border-radius:5px;font-size:10.5px;color:#444;padding:5px 7px;font-family:var(--mono)}
+  .fig .prop .swatch{display:flex;align-items:center;gap:7px;background:#f5f5f5;border:1px solid #e2e2e2;border-radius:5px;padding:5px 7px;font-size:10.5px;color:#444;font-family:var(--mono)}
+  .fig .prop .swatch i{width:13px;height:13px;border-radius:3px;border:1px solid rgba(0,0,0,.1)}
+  .fig .badge-mcp{display:inline-flex;align-items:center;gap:6px;font-size:9.5px;font-family:var(--mono);color:#0d7fd9;border:1px solid rgba(13,153,255,.4);background:rgba(13,153,255,.1);padding:3px 8px;border-radius:6px;margin-top:6px}
+
+  /* ---------- claude terminal mock (step4) — stays dark like a code block ---------- */
+  .term{background:#0b0f17;font-family:var(--mono);font-size:12.5px;line-height:1.75;padding:18px;min-height:340px;overflow:auto}
+  .term .ln{white-space:pre-wrap;word-break:break-word}
+  .term .u{color:#7fb0ff}
+  .term .p{color:#c084fc}
+  .term .g{color:#34d399}
+  .term .c{color:#8b95a5}
+  .term .w{color:#e6edf3}
+  .term .am{color:#fbbf24}
+  .term .tool{color:#67e8f9}
+  .term .box{border:1px solid #1f2733;border-radius:8px;padding:10px 12px;margin:8px 0;background:#121826}
+  .term .blink{display:inline-block;width:8px;height:15px;background:#60a5fa;vertical-align:-2px;animation:bl 1.1s steps(1) infinite}
+  @keyframes bl{50%{opacity:0}}
+
+  /* ---------- gallery ---------- */
+  .gallery{display:grid;grid-template-columns:1fr;gap:28px}
+  .gallery figure{margin:0}
+  .gallery figcaption{margin-top:12px;color:var(--muted);font-size:13.5px}
+  .gallery figcaption b{color:var(--text)}
+
+  /* ---------- tips ---------- */
+  .tips{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .tip{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow-soft)}
+  .tip .h{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;margin-bottom:8px}
+  .tip .h .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:15px;background:var(--accent-soft);border:1px solid rgba(37,99,235,.25)}
+  .tip p{font-size:13.5px;color:var(--muted)}
+  .tip.warn .h .ic{background:rgba(217,119,6,.12);border-color:rgba(217,119,6,.3)}
+  .tip.purple .h .ic{background:var(--purple-soft);border-color:rgba(124,58,237,.28)}
+  .tip.green .h .ic{background:var(--green-soft);border-color:rgba(5,150,105,.28)}
+
+  /* ---------- callout ---------- */
+  .callout{background:linear-gradient(120deg,var(--accent-soft),var(--purple-soft));border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;display:flex;gap:16px;align-items:flex-start;margin-top:24px}
+  .callout .ic{font-size:22px;flex:0 0 auto}
+  .callout p{font-size:14px;color:#34404f}
+  .callout b{color:var(--text)}
+  .callout code{font-family:var(--mono);color:var(--accent)}
+
+  /* ---------- footer ---------- */
+  footer{border-top:1px solid var(--border-soft);padding:40px 0 60px;color:var(--muted-2);font-size:12.5px;text-align:center}
+  footer .brand{justify-content:center;margin-bottom:14px;color:var(--muted)}
+  footer code{font-family:var(--mono)}
+
+  /* responsive */
+  @media (max-width:860px){
+    .pipeline{grid-template-columns:1fr 1fr}
+    .step{grid-template-columns:1fr}
+    .step.reverse{direction:ltr}
+    .tips{grid-template-columns:1fr}
+    .topnav{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span> ANCLAVE</div>
+    <nav class="topnav">
+      <a href="#overview">개요</a>
+      <a href="#step1">1. 와이어프레임</a>
+      <a href="#step2">2. GPT 디자인</a>
+      <a href="#step3">3. 컴포넌트화</a>
+      <a href="#step4">4. 구현</a>
+      <a href="#gallery">실제 결과물</a>
+      <a href="#tips">회고</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="wrap">
+  <div class="hero">
+    <span class="eyebrow">● anclave 개발기 · Design-to-Code Workflow</span>
+    <h1>Figma · GPT · Claude(MCP)로<br><span class="grad">디자인을 코드까지</span> 한 흐름으로</h1>
+    <p class="lead">
+      anclave(AI 마켓플레이스)를 만들면서 실제로 사용한 4단계 워크플로우입니다.
+      와이어프레임 → GPT 디자인 시안 → Figma MCP 컴포넌트화 → Claude 구현으로
+      이어지는 과정을 단계별 화면과 <b style="color:var(--accent)">실제 Figma 캡처</b>로 정리했습니다.
+    </p>
+    <div class="meta">
+      <span class="chip"><b>Tool</b> Figma + Figma MCP</span>
+      <span class="chip"><b>AI</b> GPT · Claude Code</span>
+      <span class="chip"><b>Project</b> anclave 마켓플레이스</span>
+      <span class="chip"><b>Theme</b> Light UI</span>
+    </div>
+  </div>
+</div>
+
+<!-- OVERVIEW -->
+<section class="block" id="overview" style="border-top:none;padding-top:0">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">// Workflow Overview</div>
+      <h2>한눈에 보는 4단계</h2>
+      <p>각 단계의 산출물이 다음 단계의 입력이 됩니다. 핵심은 3단계의 <b>Figma MCP 컴포넌트화</b> —
+         이미지를 "보는 것"이 아니라 구조화된 디자인 데이터로 Claude가 직접 읽어 코드로 옮긴다는 점입니다.</p>
+    </div>
+    <div class="pipeline">
+      <div class="pl-step">
+        <div class="num">STEP 01</div>
+        <h4>와이어프레임</h4>
+        <p>화면 구조·정보 배치를 러프하게 잡는다. 레이아웃의 뼈대만.</p>
+        <div class="tool">Figma · 선택사항</div>
+      </div>
+      <div class="pl-step">
+        <div class="num">STEP 02</div>
+        <h4>GPT 디자인 시안</h4>
+        <p>와이어프레임 이미지를 첨부해 GPT로 최종 디자인 결과 이미지를 생성.</p>
+        <div class="tool">GPT (이미지 입력→출력)</div>
+      </div>
+      <div class="pl-step">
+        <div class="num">STEP 03</div>
+        <h4>Figma 컴포넌트화</h4>
+        <p>결과 이미지를 Figma로 옮기고 Claude+Figma MCP로 컴포넌트화.</p>
+        <div class="tool">Claude + Figma MCP</div>
+      </div>
+      <div class="pl-step">
+        <div class="num">STEP 04</div>
+        <h4>코드 구현</h4>
+        <p>Claude가 MCP로 컴포넌트 데이터를 가져와 실제 결과물 구현.</p>
+        <div class="tool">Claude Code + Figma MCP</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 1 -->
+<section class="block" id="step1">
+  <div class="wrap">
+    <div class="step">
+      <div class="step-copy">
+        <span class="badge"><span class="n">01</span> · 와이어프레임 <span class="opt">선택사항</span></span>
+        <h3>피그마로 예시 와이어프레임 제작</h3>
+        <p>본격적인 디자인 전에 화면의 골격을 잡는 단계입니다. 색·폰트·디테일은 의도적으로 비우고,
+           "무엇이 어디에 들어가는가"만 빠르게 배치합니다. GPT에게 줄 <b>레이아웃 의도</b>를 명확히 하는 게 목적입니다.</p>
+        <ul>
+          <li><b>좌측 사이드바</b> — 필터/네비게이션 영역 확보</li>
+          <li><b>중앙 메인</b> — 검색 + 리스트(카드) 구조</li>
+          <li><b>우측 패널</b> — 실시간 랭킹 등 보조 정보</li>
+          <li>색·타이포는 비워두고 <b>구조에만 집중</b></li>
+        </ul>
+        <div class="callout">
+          <span class="ic">💡</span>
+          <p>이 단계를 건너뛰고 텍스트 설명만으로 GPT에 요청해도 됩니다. 다만 와이어프레임을 첨부하면
+             <b>레이아웃 의도가 그대로 전달</b>돼 시안 적중률이 크게 올라갑니다.</p>
+        </div>
+      </div>
+      <div>
+        <div class="frame">
+          <div class="bar"><div class="dots"><i></i><i></i><i></i></div><span class="title">wireframe — anclave_market.fig</span><span class="right">FRAME 1920×1080</span></div>
+          <div class="wf">
+            <div class="col">
+              <div class="label">SIDEBAR</div>
+              <div class="skl h"></div>
+              <div class="skl box"></div>
+              <div class="skl m"></div>
+              <div class="skl m"></div>
+              <div class="skl m"></div>
+              <div class="skl m"></div>
+              <div class="skl s"></div>
+            </div>
+            <div class="col">
+              <div class="label">MAIN · search + list</div>
+              <div class="skl h"></div>
+              <div class="row"><div class="skl box"></div><div class="skl m"></div><div class="skl m"></div></div>
+              <div class="row"><div class="skl box"></div><div class="skl m"></div><div class="skl m"></div></div>
+              <div class="row"><div class="skl box"></div><div class="skl m"></div><div class="skl m"></div></div>
+              <div class="row"><div class="skl box"></div><div class="skl m"></div><div class="skl m"></div></div>
+            </div>
+            <div class="col">
+              <div class="label">RANKING</div>
+              <div class="skl h"></div>
+              <div class="skl s"></div>
+              <div class="skl s"></div>
+              <div class="skl s"></div>
+              <div class="skl s"></div>
+              <div class="skl s"></div>
+            </div>
+          </div>
+        </div>
+        <div class="cap">CSS로 재현한 와이어프레임 목업</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 2 -->
+<section class="block" id="step2">
+  <div class="wrap">
+    <div class="step reverse">
+      <div class="step-copy">
+        <span class="badge"><span class="n">02</span> · GPT 디자인 시안</span>
+        <h3>GPT로 최종 디자인 결과 이미지 출력</h3>
+        <p>1단계의 와이어프레임 이미지를 첨부하고, 톤·무드·컬러·스타일을 지시해서
+           GPT로 <b>완성도 높은 디자인 시안 이미지</b>를 뽑습니다. anclave는 "다크 테마 + 블루 액센트의
+           데이터 대시보드" 방향으로 시안을 받았습니다.</p>
+        <ul>
+          <li>와이어프레임 이미지 <b>첨부 + 스타일 프롬프트</b></li>
+          <li>"dark theme, blue accent, data-dense, AI marketplace"</li>
+          <li>결과 이미지를 <b>목표 이미지(target)</b>로 확정</li>
+          <li>이 이미지가 3단계 컴포넌트화의 기준점이 됨</li>
+        </ul>
+        <div class="callout">
+          <span class="ic">🎯</span>
+          <p>실제 anclave 파일에는 이 GPT 시안이 <b>"마켓 플레이스 목표 이미지"</b> 레이어로 보관돼 있습니다
+             (현재 hidden 처리). 이 시안과 최종 컴포넌트 결과를 나란히 두고 비교하며 작업합니다.</p>
+        </div>
+      </div>
+      <div>
+        <div class="frame">
+          <div class="bar"><div class="dots"><i></i><i></i><i></i></div><span class="title">chat.openai.com — design generation</span></div>
+          <div class="gpt">
+            <div class="msg">
+              <div class="av u">나</div>
+              <div class="c">
+                첨부한 와이어프레임 기반으로 AI 마켓플레이스 UI 디자인 시안 만들어줘.
+                다크 테마, 블루 액센트, 데이터가 빽빽한 대시보드 느낌으로.
+                <div class="att">🖼 wireframe_market.png</div>
+              </div>
+            </div>
+            <div class="gen">
+              <div class="out">
+                <div class="topline"><span></span><span></span><span></span></div>
+                <div class="grid">
+                  <div><div class="ph l"></div><div class="ph l"></div><div class="ph l"></div><div class="ph tall"></div></div>
+                  <div><div class="ph l"></div><div class="ph tall"></div></div>
+                  <div><div class="ph l"></div><div class="ph l"></div><div class="ph tall"></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="prompt-bar">
+              <div class="inp">시안 디테일 조정 요청…</div>
+              <div class="send">↑</div>
+            </div>
+          </div>
+        </div>
+        <div class="cap">GPT 디자인 생성 인터페이스 (CSS 목업)</div>
+      </div>
+    </div>
+
+    <!-- REAL GPT OUTPUT -->
+    <div style="margin-top:40px">
+      <div class="callout" style="margin-bottom:18px;background:var(--purple-soft);border-color:rgba(124,58,237,.28)">
+        <span class="ic">🖼</span>
+        <p><b style="color:var(--purple)">실제 GPT 출력 결과</b> — 아래는 와이어프레임을 첨부해 GPT로 생성한
+           실제 디자인 시안입니다. 이 이미지가 다음 단계 Figma 컴포넌트화의 <b>목표 이미지(target)</b>가 됩니다.</p>
+      </div>
+      <figure class="frame">
+        <div class="bar"><div class="dots"><i></i><i></i><i></i></div><span class="title">GPT 디자인 시안 — anclave 마켓플레이스</span><span class="right">GPT OUTPUT</span></div>
+        <img src="assets/gpt-design-output.png" alt="GPT로 생성한 anclave 마켓플레이스 디자인 시안">
+      </figure>
+      <div class="cap">GPT가 출력한 최종 디자인 결과 이미지 (목표 이미지)</div>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 3 -->
+<section class="block" id="step3">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">// The core step</div>
+      <h2>3. Figma MCP로 이미지를 컴포넌트화</h2>
+      <p>GPT 시안 이미지를 Figma로 옮긴 뒤, <b>Claude + Figma MCP</b>로 화면을 실제 프레임·오토레이아웃·
+         컴포넌트 인스턴스로 재구성합니다. 이미지가 "구조를 가진 디자인 데이터"로 바뀌는 가장 중요한 단계입니다.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-copy">
+        <span class="badge"><span class="n">03</span> · 컴포넌트화</span>
+        <h3>Claude가 Figma를 직접 조립</h3>
+        <p>Figma 데스크톱의 Dev Mode MCP 서버를 통해 Claude가 캔버스를 읽고, 레이어를 생성하고,
+           반복 요소를 컴포넌트/인스턴스로 묶습니다. 좌측 레이어 트리, 중앙 캔버스, 우측 속성 패널이
+           모두 구조화된 데이터로 다뤄집니다.</p>
+        <ul>
+          <li><b>프레임 + 오토레이아웃</b>으로 반응형 구조화</li>
+          <li>카드·버튼·검색 등 반복 요소 → <b>Component / Instance</b></li>
+          <li>컬러·간격을 <b>디자인 토큰(변수)</b>로 정리</li>
+          <li>레이어 네이밍 정돈 → MCP가 읽기 좋은 구조로</li>
+        </ul>
+        <div class="callout">
+          <span class="ic">🔌</span>
+          <p><b>Figma MCP</b>는 <code>get_metadata</code>로 레이어 구조를,
+             <code>get_design_context</code>로 컴포넌트 코드·토큰을,
+             <code>get_screenshot</code>으로 렌더 이미지를 가져옵니다.</p>
+        </div>
+      </div>
+      <div>
+        <div class="frame">
+          <div class="bar"><div class="dots"><i></i><i></i><i></i></div><span class="title">Figma — anclave_마켓플레이스 예시</span><span class="right">DEV MODE · MCP</span></div>
+          <div class="fig">
+            <!-- layers -->
+            <div class="panel l">
+              <div class="ptitle">Layers</div>
+              <div class="layer"><span class="ic">▸</span> 마켓 플레이스 예시</div>
+              <div class="layer child sel"><span class="ic">▾</span> Jobs Dark</div>
+              <div class="layer child2"><span class="ic">▤</span> Horizontal Nav</div>
+              <div class="layer child2"><span class="ic">◫</span> Filters</div>
+              <div class="layer child2"><span class="ic">▤</span> Sidebar filter</div>
+              <div class="layer child2"><span class="ic">◫</span> AI 목록</div>
+              <div class="layer child2"><span class="ic">◫</span> 실시간 랭킹</div>
+              <div class="badge-mcp">⬡ MCP get_metadata</div>
+            </div>
+            <!-- canvas -->
+            <div class="canvas">
+              <div class="artboard">
+                <div class="ab-label">▸ Jobs Dark · 1650×1120</div>
+                <div class="mini">
+                  <div class="mb tall"></div>
+                  <div class="mb tall"></div>
+                  <div class="mb tall"></div>
+                </div>
+              </div>
+            </div>
+            <!-- properties -->
+            <div class="panel r">
+              <div class="ptitle">Design</div>
+              <div class="prop">
+                <div class="k">Auto layout</div>
+                <div class="fields"><div class="f">↳ Vertical</div><div class="f">gap 16</div></div>
+              </div>
+              <div class="prop">
+                <div class="k">Fill</div>
+                <div class="swatch"><i style="background:#0e1320"></i> #0E1320</div>
+              </div>
+              <div class="prop">
+                <div class="k">Accent</div>
+                <div class="swatch"><i style="background:#3b82f6"></i> #3B82F6</div>
+              </div>
+              <div class="prop">
+                <div class="k">Component</div>
+                <div class="fields"><div class="f">◇ Card</div><div class="f">×6</div></div>
+              </div>
+              <div class="badge-mcp">⬡ MCP get_design_context</div>
+            </div>
+          </div>
+        </div>
+        <div class="cap">Figma 에디터 + MCP 연동 (CSS 목업)</div>
+      </div>
+    </div>
+
+    <!-- REAL CAPTURE -->
+    <div style="margin-top:40px">
+      <div class="callout" style="margin-bottom:18px;background:var(--green-soft);border-color:rgba(5,150,105,.28)">
+        <span class="ic">📸</span>
+        <p><b style="color:var(--green)">실제 Figma 캡처</b> — 아래는 MCP <code style="color:var(--green)">get_screenshot</code>으로
+           anclave 파일에서 직접 가져온 컴포넌트화 결과물입니다. (목업이 아닌 실제 화면)</p>
+      </div>
+      <figure class="frame">
+        <div class="bar"><div class="dots"><i></i><i></i><i></i></div><span class="title">Figma — node 1:2 마켓 플레이스 예시 (컴포넌트화 완료)</span><span class="right">DEV MODE · 1920×1080</span></div>
+        <img src="assets/figma-editor-componentized.png" alt="anclave 마켓플레이스 컴포넌트화 결과 — 실제 Figma 에디터 화면">
+      </figure>
+      <div class="cap"><span class="live">● LIVE</span> 실제 Figma 에디터 화면 · 좌측 레이어 트리에 컴포넌트 구조(ranking-panel · sidebar · Jobs Dark …) 확인</div>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 4 -->
+<section class="block" id="step4">
+  <div class="wrap">
+    <div class="step reverse">
+      <div class="step-copy">
+        <span class="badge"><span class="n">04</span> · 코드 구현</span>
+        <h3>Claude가 MCP로 컴포넌트를 가져와 구현</h3>
+        <p>마지막으로 Claude Code에서 Figma MCP로 컴포넌트화된 결과물을 읽어 실제 프론트엔드 코드로 옮깁니다.
+           Claude는 레이어 구조·토큰·간격을 그대로 참조하므로, 손으로 픽셀을 옮기는 대신
+           <b>디자인 의도를 보존한 코드</b>가 나옵니다.</p>
+        <ul>
+          <li><b>get_design_context</b>로 컴포넌트별 코드·토큰 수신</li>
+          <li>디자인 변수 → CSS 변수 / 토큰으로 매핑</li>
+          <li>반복 카드 → 재사용 컴포넌트로 구현</li>
+          <li>스크린샷과 대조하며 <b>시각적 회귀 검증</b></li>
+        </ul>
+      </div>
+      <div>
+        <div class="frame">
+          <div class="bar"><div class="dots"><i></i><i></i><i></i></div><span class="title">claude code — anclave/</span></div>
+          <div class="term">
+<div class="ln"><span class="u">&gt;</span> <span class="w">figma 마켓플레이스 컴포넌트 가져와서 구현해줘</span></div>
+<div class="ln"><span class="c">  https://figma.com/design/iqVQ2.../?node-id=1-2</span></div>
+<div class="ln"> </div>
+<div class="ln"><span class="p">●</span> <span class="tool">get_metadata</span><span class="c">(node 1:2)</span> <span class="g">✓</span></div>
+<div class="ln"><span class="c">  레이어 트리 파악 · 7개 주요 프레임 식별</span></div>
+<div class="ln"><span class="p">●</span> <span class="tool">get_design_context</span><span class="c">(node 1:2)</span> <span class="g">✓</span></div>
+<div class="ln"><span class="c">  컴포넌트 코드 · 디자인 토큰 수신</span></div>
+<div class="ln"><span class="p">●</span> <span class="tool">get_screenshot</span><span class="c">(node 1:2)</span> <span class="g">✓</span></div>
+<div class="box">
+<div class="ln"><span class="g">●</span> <span class="w">구현 완료</span></div>
+<div class="ln"><span class="c">  Sidebar.tsx · MarketList.tsx · RankingPanel.tsx</span></div>
+<div class="ln"><span class="c">  tokens.css — --accent:#3B82F6 / --bg:#0E1320</span></div>
+</div>
+<div class="ln"><span class="am">→</span> <span class="w">디자인 토큰 기준으로 6개 카드 컴포넌트 생성.</span></div>
+<div class="ln"><span class="am">→</span> <span class="w">스크린샷과 대조해 간격·컬러 검증 완료.</span></div>
+<div class="ln"> </div>
+<div class="ln"><span class="u">&gt;</span> <span class="blink"></span></div>
+          </div>
+        </div>
+        <div class="cap">Claude Code + Figma MCP 흐름 (CSS 목업)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="block" id="gallery">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">// Real Figma captures</div>
+      <h2>실제 결과물 갤러리</h2>
+      <p>아래 이미지는 모두 anclave Figma 파일에서 <b>Figma MCP로 직접 캡처</b>한 실제 화면입니다.
+         GPT 시안 → 컴포넌트화 → 코드 구현으로 이어진 결과를 확인할 수 있습니다.</p>
+    </div>
+    <div class="gallery">
+      <figure>
+        <div class="frame">
+          <div class="bar"><div class="dots"><i></i><i></i><i></i></div><span class="title">마켓 플레이스 — 메인 (AI 목록 + 실시간 랭킹)</span><span class="right">node 1:2</span></div>
+          <img src="assets/figma-componentized.png" alt="anclave 마켓플레이스 메인 화면">
+        </div>
+        <figcaption><b>메인 화면</b> · 좌측 AI 필터, 중앙 AI 목록(검색·정렬), 우측 실시간 서비스 랭킹. 6개 카드가 컴포넌트 인스턴스로 구성됨.</figcaption>
+      </figure>
+      <figure>
+        <div class="frame">
+          <div class="bar"><div class="dots"><i></i><i></i><i></i></div><span class="title">서비스 선택 시 상세 페이지</span><span class="right">node 3:11938</span></div>
+          <img src="assets/figma-detail.png" alt="anclave 서비스 상세 페이지">
+        </div>
+        <figcaption><b>상세 페이지</b> · 서비스 개요·API 정보·주요 기능·사용 방법·운영 정보 + 우측 랭킹 패널. 동일 디자인 시스템에서 파생됨.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- TIPS -->
+<section class="block" id="tips">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">// Lessons learned</div>
+      <h2>회고 · 실전 팁</h2>
+      <p>anclave를 이 흐름으로 만들면서 효과가 컸던 포인트와 주의할 점입니다.</p>
+    </div>
+    <div class="tips">
+      <div class="tip">
+        <div class="h"><span class="ic">🧱</span> 와이어프레임은 "구조 전달용"</div>
+        <p>1단계는 예쁠 필요 없습니다. 색·폰트 없이 배치만 잡아도 GPT 시안 적중률이 확 올라갑니다. 그래서 선택사항이지만 강력 추천.</p>
+      </div>
+      <div class="tip green">
+        <div class="h"><span class="ic">⬡</span> MCP가 핵심 차별점</div>
+        <p>이미지를 "보고 따라 그리는" 게 아니라, Figma MCP로 레이어·토큰·간격을 구조화된 데이터로 읽기 때문에 디자인 의도가 코드까지 보존됩니다.</p>
+      </div>
+      <div class="tip purple">
+        <div class="h"><span class="ic">🏷</span> 레이어 네이밍을 정리하라</div>
+        <p>MCP가 레이어 이름·구조를 그대로 읽습니다. "Frame 234" 대신 "AI 목록", "Card" 처럼 의미 있는 이름이면 컴포넌트화·구현 품질이 좋아집니다.</p>
+      </div>
+      <div class="tip warn">
+        <div class="h"><span class="ic">⚠</span> hidden 레이어는 export 불가</div>
+        <p>GPT 목표 이미지처럼 숨긴(hidden) 레이어는 MCP 스크린샷이 1×1로 깨집니다. 캡처가 필요하면 잠깐 보이게 한 뒤 다시 숨기세요.</p>
+      </div>
+      <div class="tip">
+        <div class="h"><span class="ic">🎨</span> 토큰 먼저, 화면은 그 다음</div>
+        <p>컬러·간격을 디자인 변수(토큰)로 먼저 정리하면, 3단계 컴포넌트화와 4단계 코드의 CSS 변수가 1:1로 매핑돼 유지보수가 쉬워집니다.</p>
+      </div>
+      <div class="tip">
+        <div class="h"><span class="ic">🔁</span> 스크린샷으로 회귀 검증</div>
+        <p>구현 후 get_screenshot 결과와 실제 렌더를 나란히 비교하면, 픽셀 단위 어긋남을 빠르게 잡을 수 있습니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span> ANCLAVE</div>
+    <div>Figma → GPT → Claude(MCP) Design-to-Code Workflow · anclave 개발기</div>
+    <div style="margin-top:6px">실제 Figma 캡처: Figma MCP <code>get_screenshot</code> · node 1:2, 3:11938</div>
+  </div>
+</footer>
+
+</body>
+</html>
