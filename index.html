@@ -87,6 +87,24 @@
   .pl-step p{font-size:12.5px;color:var(--muted);line-height:1.5}
   .pl-step .tool{margin-top:12px;font-size:11px;font-family:var(--mono);color:var(--muted-2)}
 
+  /* ---------- effect (why componentize) ---------- */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
+  .cmp{border-radius:var(--radius);padding:22px;border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow-soft)}
+  .cmp.bad{border-color:rgba(203,68,68,.28)}
+  .cmp.good{border-color:rgba(5,150,105,.35);background:linear-gradient(180deg,rgba(5,150,105,.05),var(--surface))}
+  .cmp .tag{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;padding:5px 12px;border-radius:999px;margin-bottom:14px}
+  .cmp.bad .tag{color:#c0392b;background:rgba(203,68,68,.1)}
+  .cmp.good .tag{color:var(--green);background:var(--green-soft)}
+  .cmp ul{list-style:none;display:grid;gap:9px}
+  .cmp li{font-size:13.5px;color:#3a4658;padding-left:22px;position:relative}
+  .cmp.bad li::before{content:"✕";position:absolute;left:0;color:#c0392b;font-weight:700;font-size:12px}
+  .cmp.good li::before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:700;font-size:12px}
+  .effect-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .effect{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow-soft)}
+  .effect .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:17px;background:var(--accent-soft);border:1px solid rgba(37,99,235,.25);margin-bottom:10px}
+  .effect h4{font-size:14px;font-weight:700;margin-bottom:5px}
+  .effect p{font-size:12.5px;color:var(--muted);line-height:1.5}
+
   /* ---------- sections ---------- */
   section.block{padding:64px 0;border-top:1px solid var(--border-soft)}
   .sec-head{margin-bottom:34px}
@@ -227,6 +245,8 @@
   /* responsive */
   @media (max-width:860px){
     .pipeline{grid-template-columns:1fr 1fr}
+    .compare{grid-template-columns:1fr}
+    .effect-grid{grid-template-columns:1fr 1fr}
     .step{grid-template-columns:1fr}
     .step.reverse{direction:ltr}
     .tips{grid-template-columns:1fr}
@@ -241,6 +261,7 @@
     <div class="brand"><span class="dot"></span> ANCLAVE</div>
     <nav class="topnav">
       <a href="#overview">개요</a>
+      <a href="#effect">효과</a>
       <a href="#step1">1. 와이어프레임</a>
       <a href="#step2">2. GPT 디자인</a>
       <a href="#step3">3. 컴포넌트화</a>
@@ -304,6 +325,44 @@
         <p>Claude가 MCP로 컴포넌트 데이터를 가져와 실제 결과물 구현.</p>
         <div class="tool">Claude Code + Figma MCP</div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- EFFECT -->
+<section class="block" id="effect">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">// Why componentize</div>
+      <h2>효과 · 왜 이미지보다 컴포넌트화인가</h2>
+      <p>한 줄 요약 — <b>이미지를 던지면 AI가 "추측"하고, 컴포넌트화하면 AI가 "사실(데이터)"을 읽는다.</b>
+         이 차이가 정확도·재사용·유지보수를 전부 가릅니다.</p>
+    </div>
+    <div class="compare">
+      <div class="cmp bad">
+        <span class="tag">🖼 이미지만 던지기</span>
+        <ul>
+          <li>간격·색을 눈대중으로 역산 → 오차 누적</li>
+          <li>카드 6개를 6번 따로 그림 (제각각)</li>
+          <li>글자는 OCR 추측 → 오타·잘림</li>
+          <li>반응형 규칙 없음 (한 순간의 스냅샷)</li>
+        </ul>
+      </div>
+      <div class="cmp good">
+        <span class="tag">⬡ 컴포넌트화 후 구현</span>
+        <ul>
+          <li>실제 값(gap·color·font)을 데이터로 그대로</li>
+          <li>Card 컴포넌트 1개 + 반복 → 자동 DRY</li>
+          <li>실제 문자열·레이어 이름이 변수명까지</li>
+          <li>오토레이아웃이 flex/grid로 그대로 번역</li>
+        </ul>
+      </div>
+    </div>
+    <div class="effect-grid">
+      <div class="effect"><div class="ic">🎯</div><h4>정확도</h4><p>추측이 아니라 실제 토큰·간격을 읽어 픽셀 어긋남이 없습니다.</p></div>
+      <div class="effect"><div class="ic">♻️</div><h4>재사용 (DRY)</h4><p>반복 요소가 컴포넌트로 잡혀 코드도 1개로 재사용됩니다.</p></div>
+      <div class="effect"><div class="ic">🎨</div><h4>일관성</h4><p>디자인 토큰이 CSS 변수로 1:1 매핑돼 색·간격이 흔들리지 않습니다.</p></div>
+      <div class="effect"><div class="ic">🔁</div><h4>유지보수·파생</h4><p>"이 컴포넌트만 수정"이 가능하고, 새 화면을 같은 시스템에서 파생합니다.</p></div>
     </div>
   </div>
 </section>
